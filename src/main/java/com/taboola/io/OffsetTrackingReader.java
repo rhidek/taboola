@@ -2,17 +2,27 @@ package com.taboola.io;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.CharBuffer;
 
+/**
+ * A wrapping class for {@link Reader} that tracks the number of characters read from the stream.
+ * Wraps supplied Reader in a {@link BufferedReader} and therefore supports {@link #mark(int)} and {@link #reset()}.
+ */
 public class OffsetTrackingReader extends Reader {
-    Reader wrapped;
+    BufferedReader wrapped;
     int offset = 0;
     int markedOffset = 0;
 
-    public OffsetTrackingReader(Reader wrapped) {
+    public OffsetTrackingReader(BufferedReader wrapped) {
+        super();
         this.wrapped = wrapped;
+    }
+
+    public OffsetTrackingReader(Reader wrapped) {
+        this(new BufferedReader(wrapped));
     }
 
     @Override
