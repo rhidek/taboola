@@ -8,6 +8,11 @@ public class JsonParseException extends RuntimeException {
         this.offset = offset;
     }
 
+    public JsonParseException(String message, int offset, Throwable cause) {
+        super(message, cause);
+        this.offset = offset;
+    }
+
     public Integer getOffset() {
         return offset;
     }

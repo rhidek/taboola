@@ -1,6 +1,6 @@
 package com.taboola.json
 
-import spock.lang.PendingFeature
+
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -24,20 +24,66 @@ class JsonParserTest extends Specification {
         result == [:]
     }
 
-    @PendingFeature
-    def "Should parse key-value pairs"() {
+    @Unroll
+    def "Should parse k-v (#useCase) pairs"() {
         given: "a populated object"
-        json
+        String json = """
+            { "k 1": ${text} }
+            """
 
         when: "it is parsed"
         Map<String, Object> result = jsonParser.parse(json)
 
         then: "the result is a populated Map"
-        result == expectedResult
+        result == ['k 1': expected]
 
         where:
-        useCase           | expectedResult                   | json
-        "shallow strings" | [key1: "value 1", key2: "value 2"] | """{ "key1": "value 1", "key2": "value 2" }"""
+        useCase   | text      | expected
+        "null"    | 'null'    | null
+        "bool"    | 'true'    | true
+        "bool2"   | 'false'   | false
+        "string"  | '"v 1"'   | 'v 1'
+        "float"   | '12.1234' | BigDecimal.valueOf(12.1234)
+        "sciNot"  | '6.24E+2' | new BigDecimal("6.24E+2")
+        "sciNot2" | '12e-2'   | new BigDecimal("12e-2")
+    }
+
+    def "Should parse nested objects"() {
+        given: "a populated object"
+        String json = """
+            { 
+                "k": {
+                    "k":"v",
+                    "k2":"v2" 
+                } 
+            }
+            """
+
+        when: "it is parsed"
+        Map<String, Object> result = jsonParser.parse(json)
+
+        then: "the result is a populated Map"
+        result == [k: [k: "v", k2: "v2"]]
+    }
+
+    def "Should parse nested arrays"() {
+        given: "a populated object"
+        String json = """
+            { 
+                "k": [ 
+                    "a", 
+                    "b", 
+                    1, 
+                    2 
+                ] 
+            }
+            """
+
+        when: "it is parsed"
+        Map<String, Object> result = jsonParser.parse(json)
+
+        then: "the result is a populated Map"
+        result == [k: ["a", "b", 1, 2]]
     }
 
     def "Should throw an NPE for null String input"() {
@@ -74,10 +120,21 @@ class JsonParserTest extends Specification {
         exception.offset == expectedOffset
 
         where:
-        reason            | expectedMessage                        | expectedOffset | invalidJson
-        "empty"           | "JSON is empty"                        | 0              | ""
-        "naked array"     | "JSON must begin with an Object"       | 0              | "[]"
-        "junk"            | "JSON must begin with an Object"       | 0              | "this is junk"
-        "unclosed Object" | "Encountered unexpected end of Object" | 1              | "{"
+        reason             | expectedMessage                                    | expectedOffset | invalidJson
+        "empty1"           | "JSON is empty."                                   | 0              | ''
+        "empty2"           | "JSON is empty."                                   | 0              | ' '
+        "naked array"      | "JSON must begin with an Object."                  | 0              | '[]'
+        "junk"             | "JSON must begin with an Object."                  | 0              | 'this is junk'
+        "unclosed Object1" | "No closing token for object started at offset 1." | 1              | ' {'
+        "unclosed Object2" | "No closing token for object started at offset 0." | 13             | '{"k":{"k":"v"}'
+        "incomplete KV1"   | "Encountered unexpected token: '}'."               | 5              | '{"k":}'
+        "incomplete KV2"   | "Encountered unexpected token: '}'."               | 14             | '{"k1":"v","k2"}'
+        "incomplete KV3"   | "Encountered unexpected token: '}'."               | 15             | '{"k1":"v","k2":}'
+        "invalid null"     | "Expected 'null' but got 'nil}'."                  | 5              | '{"k":nil}'
+        "invalid null2"    | "Encountered unexpected end of stream."            | 5              | '{"k":n'
+        "invalid true"     | "Expected 'true' but got 'tru}'."                  | 5              | '{"k":tru}'
+        "invalid true2"    | "Encountered unexpected end of stream."            | 5              | '{"k":t'
+        "invalid false"    | "Expected 'false' but got 'falsw'."                | 5              | '{"k":falsw}'
+        "invalid false2"   | "Encountered unexpected end of stream."            | 5              | '{"k":f'
     }
 }

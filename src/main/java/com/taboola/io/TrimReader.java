@@ -22,14 +22,19 @@ public class TrimReader extends OffsetTrackingReader {
     public int read() throws IOException {
         int current;
         while ((current = super.read()) != -1) {
-            if ((char) current == '"') {
-                ignoreWhitespace = !ignoreWhitespace;
-            }
             Matcher matcher = whitespace.matcher(String.valueOf((char) current));
             if (!matcher.matches() || !ignoreWhitespace) {
                 break;
             }
         }
         return current;
+    }
+
+    public void toggleIgnoreWhitespce() {
+        ignoreWhitespace = !ignoreWhitespace;
+    }
+
+    public boolean isIgnoreWhitespace() {
+        return ignoreWhitespace;
     }
 }
